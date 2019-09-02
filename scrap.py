@@ -1,47 +1,64 @@
-from bs4 import BeautifulSoup, SoupStrainer
 import requests
-import re
-import os
 import logging
+from bs4 import BeautifulSoup, SoupStrainer
+from analysis import filter, analysis
+from boards import t_indeed_url, get_ad_url_indeed, ad_anchor_indeed, id_from_url_indeed, \
+                   target_indeed_title, target_indeed_text
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
-def custom_filter(tag):
-    return tag.has_attr('data-tn-element') and tag['data-tn-element'] == "jobTitle"
+class Ad:
+
+    def __init__(self, title=None, id_=None, url=None, text=None):
+        self.id_ = id_
+        self.url = url
+        self.text = text
+        self.title = title
+
+    @classmethod
+    def from_url(cls, url, target_title=None, target_text=None, extract_id=None):
+        resp = requests.get(url)
+        soup = BeautifulSoup(resp.text, 'html.parser')
+        title_r = soup.find(target_title)
+        title = str(title_r.string)
+        text_r = soup.find(target_text)
+        text = str(text_r)
+        id_ = str(extract_id(url))
+
+        return cls(title=title,
+                   id_=id_,
+                   url=url,
+                   text=text)
 
 
-def bar(href):
-    return 'https://ie.indeed.com/viewjob?' + href.split('?')[1]
+def get_results_page(q_template, query):
+    url = q_template.substitute(**query)
+    resp = requests.get(url)
+    return resp
 
 
-logger.info('Script Starting...')
-url = "https://ie.indeed.com/jobs?as_and=python+developer&as_phr=&as_any=&as_not=&as_ttl=&as_cmp=&jt=fulltime&st=&as_src=&radius=25&l=Dublin&fromage=any&limit=50&sort=date&psf=advsrch"
-resp = requests.get(url)
-logger.info('Main page received.')
+def get_ads_tags(text, filter):
+    soup = BeautifulSoup(text, "html.parser")
+    ads_tags = soup.find_all(filter)
+    return ads_tags
 
-target = SoupStrainer('a')
-soup = BeautifulSoup(resp.text, "html.parser", parse_only=target)
-jobs = soup.find_all(custom_filter)
 
-ads = [{'title': re.sub('/', '', job.get('title')), 'url': bar(job.get('href'))} for job in jobs]
+def get_ads_url(ads_tags, get_ad_url):
+    ads_url = [get_ad_url(tag) for tag in ads_tags]
+    return ads_url
 
-target = SoupStrainer(id="jobDescriptionText")
-i = 1
-folder = 'data-scraped'
-extension = ".txt"
-logger.info('Starting ads...')
-for index, ad in enumerate(ads):
-    logger.info(f'- Ad {index} - Fetch')
-    resp = requests.get(ad['url'])
-    logger.info(f'- Ad {index} - Fetched')
-    soup = BeautifulSoup(resp.text, "html.parser", parse_only=target)
-    filename = str(index) + '_' + re.sub(' ', '_', ad.get('title')) + extension
-    path = os.path.join(folder, filename)
-    with open(path, 'w') as file:
-        file.write(str(soup))
-    logger.info(f'- Ad {index} - Written')
 
-logger.info('Script Ended.')
+def ads_from_urls(urls, target_title=None, target_text=None, extract_id=None):
+    return [Ad.from_url(url, target_title, target_text, extract_id) for url in urls]
+
+
+query = {'q_kw': 'python+developer', 'q_location': 'Dublin'}
+resp = get_results_page(t_indeed_url, query)
+
+ads_tags = get_ads_tags(resp.text, ad_anchor_indeed)
+ads_url = get_ads_url(ads_tags, get_ad_url_indeed)
+ads = ads_from_urls(ads_url,
+                    target_title=target_indeed_title, target_text=target_indeed_text, extract_id=id_from_url_indeed)
