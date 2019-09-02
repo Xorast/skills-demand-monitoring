@@ -35,11 +35,6 @@ def ad_filter_text(tag):
     return tag.has_attr('id') and tag['id'] == 'jobDescriptionText'
 
 
-def ad_get_title(soup):
-    tag = soup[0]
-    return tag.get('data-indeed-apply-jobtitle')
-
-
 def id_from_url_indeed(url):
     match = re.search(r"^.*jk=(.*)&fccid=.*$", url)
     return match.group(1)
