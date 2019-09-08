@@ -35,6 +35,10 @@ def ad_filter_text(tag):
     return tag.has_attr('id') and tag['id'] == 'jobDescriptionText'
 
 
+def pages_filter_url(tag):
+    return tag.has_attr('data-pp')
+
+
 def id_from_url_indeed(url):
     match = re.search(r"^.*jk=(.*)&fccid=.*$", url)
     return match.group(1)
@@ -49,3 +53,5 @@ def get_ad_url_indeed(tag):
 
 target_indeed_title = SoupStrainer(ad_filter_title)
 target_indeed_text = SoupStrainer(id="jobDescriptionText")
+target_indeed_pages = SoupStrainer(pages_filter_url)
+

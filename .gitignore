@@ -2,3 +2,6 @@ env.sh
 .idea
 scraping.iml
 examples
+draft.py
+__pycache__
+credentials.txt
