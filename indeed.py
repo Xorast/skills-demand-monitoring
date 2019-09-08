@@ -1,57 +1,55 @@
+# BOARD: INDEED.IE
+
 from string import Template
-from bs4 import SoupStrainer
 import re
-
-""" INDEED.IE """
-
-t_indeed_url = Template("https://ie.indeed.com/jobs?"
-                        "as_and=$q_kw"
-                        "&as_phr="
-                        "&as_any="
-                        "&as_not="
-                        "&as_ttl="
-                        "&as_cmp="
-                        "&jt=fulltime"
-                        "&st="
-                        "&as_src="
-                        "&radius=25"
-                        "&l=$q_location"
-                        "&fromage=any"
-                        "&limit=50"
-                        "&sort=date"
-                        "&psf=advsrch")
+from bs4 import SoupStrainer
 
 
-def ad_anchor_indeed(tag):
+def filter_ad_tag(tag):  # get_ad_tag()
     """ Beautiful Soup filtering - Select job ads anchors. """
     return str(tag.name) == 'a' and tag.has_attr('data-tn-element') and tag['data-tn-element'] == 'jobTitle'
 
 
-def ad_filter_title(tag):
+def filter_ad_title(tag):
     return tag.has_attr('class') and 'jobsearch-JobInfoHeader-title' in tag['class']
 
 
-def ad_filter_text(tag):
-    return tag.has_attr('id') and tag['id'] == 'jobDescriptionText'
-
-
-def pages_filter_url(tag):
+def filter_pages_url(tag):
     return tag.has_attr('data-pp')
 
 
-def id_from_url_indeed(url):
+def get_ad_id(url):
     match = re.search(r"^.*jk=(.*)&fccid=.*$", url)
     return match.group(1)
 
 
-def get_ad_url_indeed(tag):
+def get_ad_url(tag):  # get_ad_url()
     """ Complete ad's URL"""
     radical = 'https://ie.indeed.com/viewjob?'
     href = tag.get('href')
     return radical + href.split('?')[1]
 
 
-target_indeed_title = SoupStrainer(ad_filter_title)
-target_indeed_text = SoupStrainer(id="jobDescriptionText")
-target_indeed_pages = SoupStrainer(pages_filter_url)
-
+indeed = {'domain': 'https://ie.indeed.com/',
+          'query_template': Template("https://ie.indeed.com/jobs?"
+                                     "as_and=$kw"
+                                     "&as_phr="
+                                     "&as_any="
+                                     "&as_not="
+                                     "&as_ttl="
+                                     "&as_cmp="
+                                     "&jt=fulltime"
+                                     "&st="
+                                     "&as_src="
+                                     "&radius=25"
+                                     "&l=$location"
+                                     "&fromage=any"
+                                     "&limit=50"
+                                     "&sort=date"
+                                     "&psf=advsrch"),
+          'get_ad_url': get_ad_url,
+          'get_ad_id': get_ad_id,
+          'filters': {'pages': SoupStrainer(filter_pages_url),
+                      'ad_tags': filter_ad_tag,
+                      'title': SoupStrainer(filter_ad_title),
+                      'text': SoupStrainer(id="jobDescriptionText")}}
