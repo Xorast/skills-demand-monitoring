@@ -1,3 +1,5 @@
+# SEARCH
+
 import logging
 import requests
 from bs4 import BeautifulSoup
@@ -8,7 +10,8 @@ logger = logging.getLogger(__name__)
 
 class Search:
 
-    def __init__(self, domain=None, query_template=None, filters=None, get_ad_url=None, get_ad_id=None, query=None):
+    def __init__(self, site=None, domain=None, query_template=None, filters=None, get_ad_url=None, get_ad_id=None, query=None):
+        self.site = site
         self.domain = domain
         self.query_template = query_template
         self.filters = filters
@@ -86,8 +89,4 @@ class Ad:
             text_r = soup.find(filter_text)
             text = str(text_r)  # if text_r else 'None'
             id_ = str(get_id(url))
-
-            return cls(title=title,
-                       id_=id_,
-                       url=url,
-                       text=text)
+            return cls(title=title, id_=id_, url=url, text=text)

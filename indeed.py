@@ -5,7 +5,7 @@ import re
 from bs4 import SoupStrainer
 
 
-def filter_ad_tag(tag):  # get_ad_tag()
+def filter_ad_tag(tag):
     """ Beautiful Soup filtering - Select job ads anchors. """
     return str(tag.name) == 'a' and tag.has_attr('data-tn-element') and tag['data-tn-element'] == 'jobTitle'
 
@@ -23,14 +23,15 @@ def get_ad_id(url):
     return match.group(1)
 
 
-def get_ad_url(tag):  # get_ad_url()
+def get_ad_url(tag):
     """ Complete ad's URL"""
     radical = 'https://ie.indeed.com/viewjob?'
     href = tag.get('href')
     return radical + href.split('?')[1]
 
 
-indeed = {'domain': 'https://ie.indeed.com/',
+indeed = {'site': 'indeed',
+          'domain': 'https://ie.indeed.com/',
           'query_template': Template("https://ie.indeed.com/jobs?"
                                      "as_and=$kw"
                                      "&as_phr="
